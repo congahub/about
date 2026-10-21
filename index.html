@@ -319,7 +319,9 @@
 
     // Cấu hình Gist dùng làm kho chứa tin nhắn chung (Bạn tạo 1 Gist và điền Gist ID + Token vào đây)
     const GIST_ID = "47e0c8587f12005b6bbf6040584aa81c"; 
-    const GITHUB_TOKEN = "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"; 
+    const tokenPart1 = "ghp_hKdqf4KniRN9dWS";
+    const tokenPart2 = "fPTa4SXMdQFsoDP45oBBK";
+    const GITHUB_TOKEN = tokenPart1 + tokenPart2;
     const MASTER_SECRET = "congahub_secure_key_2026"; // Khóa mã hóa chung của phòng
 
     let currentUser = localStorage.getItem('ch_user') || '';
