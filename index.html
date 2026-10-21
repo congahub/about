@@ -207,7 +207,7 @@
       <!-- Form Đăng Nhập -->
       <div id="authScreen" class="auth-form">
         <p style="margin: 0 0 10px; color: #8b949e;">Vui lòng nhập ID thành viên và Mã bảo mật cấp riêng để tham gia phòng chat:</p>
-        <input type="text" id="memberIdInput" placeholder="Nhập ID của bạn ..." />
+        <input type="text" id="memberIdInput" placeholder="Nhập ID của bạn..." />
         <input type="password" id="memberPassInput" placeholder="Nhập Mã bảo mật..." />
         <p id="errorText" class="error-msg hidden">Sai ID hoặc Mã bảo mật! Vui lòng kiểm tra lại.</p>
         <button class="btn" onclick="verifyLogin()">Xác thực & Vào phòng</button>
@@ -369,8 +369,10 @@
         return;
       }
       try {
-        let res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-          headers: { Authorization: `token ${GITHUB_TOKEN}` }
+        // Gắn thêm timestamp (?t=...) và cài đặt cache: 'no-store' để ép trình duyệt luôn lấy dữ liệu mới từ GitHub
+        let res = await fetch(`https://api.github.com/gists/${GIST_ID}?t=${Date.now()}`, {
+          headers: { Authorization: `token ${GITHUB_TOKEN}` },
+          cache: 'no-store'
         });
         if (!res.ok) return;
         let data = await res.json();
@@ -413,8 +415,10 @@
       let senderName = members[currentUser].name;
 
       try {
-        let res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-          headers: { Authorization: `token ${GITHUB_TOKEN}` }
+        // Thêm ?t=Date.now() và cache: 'no-store' ở lệnh fetch đọc dữ liệu cũ
+        let res = await fetch(`https://api.github.com/gists/${GIST_ID}?t=${Date.now()}`, {
+          headers: { Authorization: `token ${GITHUB_TOKEN}` },
+          cache: 'no-store'
         });
         let data = await res.json();
         let file = data.files['congahub_chat.json'];
