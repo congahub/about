@@ -207,7 +207,7 @@
       <!-- Form Đăng Nhập -->
       <div id="authScreen" class="auth-form">
         <p style="margin: 0 0 10px; color: #8b949e;">Vui lòng nhập ID thành viên và Mã bảo mật cấp riêng để tham gia phòng chat:</p>
-        <input type="text" id="memberIdInput" placeholder="Nhập ID của bạn (Ví dụ: laquan)..." />
+        <input type="text" id="memberIdInput" placeholder="Nhập ID của bạn ..." />
         <input type="password" id="memberPassInput" placeholder="Nhập Mã bảo mật..." />
         <p id="errorText" class="error-msg hidden">Sai ID hoặc Mã bảo mật! Vui lòng kiểm tra lại.</p>
         <button class="btn" onclick="verifyLogin()">Xác thực & Vào phòng</button>
@@ -318,7 +318,7 @@
     };
 
     // Cấu hình Gist dùng làm kho chứa tin nhắn chung (Bạn tạo 1 Gist và điền Gist ID + Token vào đây)
-    const GIST_ID = "https://gist.github.com/QLloveGit39/47e0c8587f12005b6bbf6040584aa81c"; 
+    const GIST_ID = "47e0c8587f12005b6bbf6040584aa81c"; 
     const GITHUB_TOKEN = "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"; 
     const MASTER_SECRET = "congahub_secure_key_2026"; // Khóa mã hóa chung của phòng
 
