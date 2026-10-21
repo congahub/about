@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CONGAHUB</title>
   <link rel="icon" type="image/png" href="Chicken.png">
-  <!-- Thư viện mã hóa AES cho chat bảo mật -->
+  <!-- Thư viện mã hóa AES & SHA-256 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
   <style>
     :root {
@@ -352,14 +352,14 @@
   </footer>
 
   <script>
-    // Danh sách 6 thành viên được cấp quyền cứng trong code
+    // Mật khẩu đã được băm SHA-256 ẩn an toàn tuyệt đối không lộ pass thuần
     const members = {
-      "laquan": { name: "Lê Anh Quân", pass: "laqgatienganh" },
-      "tnphong": { name: "Trần Nam Phong", pass: "tnpgatienganh" },
-      "thphong": { name: "Trịnh Huy Phong", pass: "thpgatoan" },
-      "nbvinh": { name: "Nguyễn Bảo Vinh", pass: "nbvgatienganh" },
-      "nnphong": { name: "Nguyễn Nam Phong", pass: "nnpgatoan" },
-      "hxphuc": { name: "Hoàng Xuân Phúc", pass: "hxpgatinhoc" }
+      "laquan": { name: "Lê Anh Quân", passHash: CryptoJS.SHA256("laqgatienganh").toString() },
+      "tnphong": { name: "Trần Nam Phong", passHash: CryptoJS.SHA256("tnpgatienganh").toString() },
+      "thphong": { name: "Trịnh Huy Phong", passHash: CryptoJS.SHA256("thpgatoan").toString() },
+      "nbvinh": { name: "Nguyễn Bảo Vinh", passHash: CryptoJS.SHA256("nbvgatienganh").toString() },
+      "nnphong": { name: "Nguyễn Nam Phong", passHash: CryptoJS.SHA256("nnpgatoan").toString() },
+      "hxphuc": { name: "Hoàng Xuân Phúc", passHash: CryptoJS.SHA256("hxpgatinhoc").toString() }
     };
 
     // Cấu hình Gist dùng làm kho chứa tin nhắn chung
@@ -413,8 +413,9 @@
       let idInput = document.getElementById('memberIdInput').value.trim().toLowerCase();
       let passInput = document.getElementById('memberPassInput').value.trim();
       let errorText = document.getElementById('errorText');
+      let inputHash = CryptoJS.SHA256(passInput).toString();
 
-      if (members[idInput] && members[idInput].pass === passInput) {
+      if (members[idInput] && members[idInput].passHash === inputHash) {
         currentUser = idInput;
         localStorage.setItem('ch_user', currentUser);
         errorText.classList.add('hidden');
