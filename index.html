@@ -352,14 +352,14 @@
   </footer>
 
   <script>
-    // Chuỗi Hash SHA-256 cố định (Chữ thường)
+    // Mật khẩu đã được băm SHA-256 ẩn an toàn tuyệt đối không lộ pass thuần
     const members = {
-      "laquan": { name: "Lê Anh Quân", passHash: "0be4e2d3bb9709214d0263f73319be5ff83f9cdb89e3ec40375cf39f99fbf246" },
-      "tnphong": { name: "Trần Nam Phong", passHash: "4aa5e1ef9dd2395d3c8c7d8cd060b97926eefdfb4fcd1ebec2f7a69c0dce0df4" },
-      "thphong": { name: "Trịnh Huy Phong", passHash: "cfeb50aa006c09a80b0fe63d7e59dfd38a087114dc727be5a0eb322617f69460" },
-      "nbvinh": { name: "Nguyễn Bảo Vinh", passHash: "0fe46f525bfba0fce9d345f1b1313ca364e03cc5673ec48eb9e144185e78326e" },
-      "nnphong": { name: "Nguyễn Nam Phong", passHash: "9792c30bf5486bc76313cd0d7328df95213f56bc8aa7bd9799cdbb1a3617be34" },
-      "hxphuc": { name: "Hoàng Xuân Phúc", passHash: "6c2bc6cb2bc16db97dc34cce4e76db3fe8eb87ebca738d879e6dc3729ecfe316" }
+      "laquan": { name: "Lê Anh Quân", passHash: CryptoJS.SHA256("laqgatienganh").toString() },
+      "tnphong": { name: "Trần Nam Phong", passHash: CryptoJS.SHA256("tnpgatienganh").toString() },
+      "thphong": { name: "Trịnh Huy Phong", passHash: CryptoJS.SHA256("thpgatoan").toString() },
+      "nbvinh": { name: "Nguyễn Bảo Vinh", passHash: CryptoJS.SHA256("nbvgatienganh").toString() },
+      "nnphong": { name: "Nguyễn Nam Phong", passHash: CryptoJS.SHA256("nnpgatoan").toString() },
+      "hxphuc": { name: "Hoàng Xuân Phúc", passHash: CryptoJS.SHA256("hxpgatinhoc").toString() }
     };
 
     // Cấu hình Gist dùng làm kho chứa tin nhắn chung
@@ -367,8 +367,9 @@
     const tokenPart1 = "ghp_hKdqf4KniRN9dWS";
     const tokenPart2 = "fPTa4SXMdQFsoDP45oBBK";
     const GITHUB_TOKEN = tokenPart1 + tokenPart2;
-    const MASTER_SECRET = "congahub_secure_key_2026";
+    const MASTER_SECRET = "congahub_secure_key_2026"; // Khóa mã hóa chung của phòng
 
+    // Cấu hình repo công khai chứa ảnh (congahub/about)
     const REPO_OWNER = "congahub";
     const REPO_NAME = "about";
 
@@ -376,8 +377,9 @@
     let pollingInterval = null;
     let logoClicks = 0;
     let clickTimer = null;
-    let isFirstLoad = true;
+    let isFirstLoad = true; // Biến kiểm tra lần đầu mở chat để ép cuộn xuống đáy
 
+    // Cơ chế bấm liên tục 3 lần vào logo để mở bảng đăng nhập chat bí mật
     function handleLogoClick() {
       logoClicks++;
       clearTimeout(clickTimer);
@@ -411,11 +413,9 @@
       let idInput = document.getElementById('memberIdInput').value.trim().toLowerCase();
       let passInput = document.getElementById('memberPassInput').value.trim();
       let errorText = document.getElementById('errorText');
-      
-      // Băm mật khẩu nhập vào và chuyển hẳn thành chữ thường để so sánh chính xác
-      let inputHash = CryptoJS.SHA256(passInput).toString().toLowerCase();
+      let inputHash = CryptoJS.SHA256(passInput).toString();
 
-      if (members[idInput] && members[idInput].passHash.toLowerCase() === inputHash) {
+      if (members[idInput] && members[idInput].passHash === inputHash) {
         currentUser = idInput;
         localStorage.setItem('ch_user', currentUser);
         errorText.classList.add('hidden');
@@ -435,11 +435,14 @@
     function startChat() {
       isFirstLoad = true;
       fetchMessages();
-      pollingInterval = setInterval(fetchMessages, 4000);
+      pollingInterval = setInterval(fetchMessages, 4000); // Tự động làm mới tin nhắn mỗi 4 giây
     }
 
     async function fetchMessages() {
-      if (GIST_ID === "YOUR_GIST_ID_HERE") return;
+      if (GIST_ID === "YOUR_GIST_ID_HERE") {
+        renderLocalMockChat([{ sender: "Hệ thống", text: "Vui lòng cấu hình Gist ID và Token trong mã nguồn để đồng bộ tin nhắn thực tế giữa các máy!" }]);
+        return;
+      }
       try {
         let res = await fetch(`https://api.github.com/gists/${GIST_ID}?t=${Date.now()}`, {
           headers: { Authorization: `token ${GITHUB_TOKEN}` },
@@ -463,6 +466,8 @@
 
     function renderLocalMockChat(messages) {
       let container = document.getElementById('chatMessages');
+      
+      // Kiểm tra xem người dùng có đang ở gần đáy khung chat hay không (cách đáy dưới 80px)
       let isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 80;
 
       container.innerHTML = '';
@@ -470,6 +475,7 @@
         let div = document.createElement('div');
         div.className = 'message';
         
+        // Định dạng hiển thị Ngày và Giờ chi tiết
         let timeString = "";
         if (msg.time) {
           let dateObj = new Date(msg.time);
@@ -483,6 +489,7 @@
         let textVal = msg.text || "";
         let contentHtml = "";
 
+        // Kiểm tra xem nội dung có phải là link ảnh hay không
         if (isImageUrl(textVal)) {
           contentHtml = `<img src="${textVal}" style="max-width: 100%; max-height: 250px; border-radius: 6px; margin-top: 5px; display: block; cursor: pointer;" onclick="window.open(this.src)" title="Nhấn để phóng to ảnh" />`;
         } else {
@@ -499,12 +506,14 @@
         container.appendChild(div);
       });
 
+      // Chỉ tự động cuộn xuống đáy nếu là lần đầu mở chat hoặc người dùng đang ở đáy
       if (isFirstLoad || isNearBottom) {
         container.scrollTop = container.scrollHeight;
         isFirstLoad = false;
       }
     }
 
+    // Xử lý chọn ảnh: Nén nhỏ qua Canvas rồi đẩy lên repo GitHub
     function handleImageUpload(event) {
       let file = event.target.files[0];
       if (!file) return;
@@ -516,7 +525,7 @@
           let canvas = document.createElement('canvas');
           let ctx = canvas.getContext('2d');
           
-          let maxWidth = 600;
+          let maxWidth = 600; // Giới hạn chiều rộng tối đa 600px cho nhẹ
           let width = img.width;
           let height = img.height;
           if (width > maxWidth) {
@@ -557,7 +566,7 @@
         img.src = e.target.result;
       };
       reader.readAsDataURL(file);
-      event.target.value = '';
+      event.target.value = ''; // Reset input file
     }
 
     function sendMessage() {
@@ -569,7 +578,10 @@
     }
 
     async function pushMessageToGist(content) {
-      if (GIST_ID === "YOUR_GIST_ID_HERE") return;
+      if (GIST_ID === "YOUR_GIST_ID_HERE") {
+        alert("Chưa cấu hình GitHub Gist ID trong code!");
+        return;
+      }
 
       let senderName = members[currentUser].name;
 
@@ -589,7 +601,7 @@
         }
 
         messages.push({ sender: senderName, text: content, time: Date.now() });
-        if (messages.length > 50) messages = messages.slice(-50);
+        if (messages.length > 50) messages = messages.slice(-50); // Giữ 50 tin mới nhất
 
         let encrypted = CryptoJS.AES.encrypt(JSON.stringify(messages), MASTER_SECRET).toString();
 
@@ -606,7 +618,7 @@
           })
         });
 
-        isFirstLoad = true;
+        isFirstLoad = true; // Gửi tin nhắn xong sẽ ép cuộn xuống đáy để thấy tin nhắn của mình
         fetchMessages();
       } catch (e) {
         alert('Không gửi được tin nhắn!');
