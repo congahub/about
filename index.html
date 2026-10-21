@@ -213,8 +213,9 @@
     .chat-input-row {
       display: flex;
       gap: 10px;
+      align-items: center;
     }
-    .chat-input-row input { flex: 1; margin: 0; }
+    .chat-input-row input[type="text"] { flex: 1; margin: 0; }
     .hidden { display: none !important; }
     .error-msg { color: #e74c3c; font-size: 0.9rem; margin: 0; }
 
@@ -261,6 +262,10 @@
           <!-- Tin nhắn sẽ tải tự động vào đây -->
         </div>
         <div class="chat-input-row">
+          <!-- Input file ẩn để chọn ảnh -->
+          <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)" />
+          <button class="btn" style="background: #30363d; padding: 10px 14px; font-size: 1.1rem;" onclick="document.getElementById('imageInput').click()" title="Gửi ảnh">🖼️</button>
+          
           <input type="text" id="messageInput" placeholder="Nhập tin nhắn..." onkeypress="checkEnter(event)" />
           <button class="btn" onclick="sendMessage()">Gửi</button>
         </div>
@@ -363,6 +368,10 @@
     const tokenPart2 = "fPTa4SXMdQFsoDP45oBBK";
     const GITHUB_TOKEN = tokenPart1 + tokenPart2;
     const MASTER_SECRET = "congahub_secure_key_2026"; // Khóa mã hóa chung của phòng
+
+    // Cấu hình repo công khai chứa ảnh (congahub/about)
+    const REPO_OWNER = "congahub";
+    const REPO_NAME = "about";
 
     let currentUser = localStorage.getItem('ch_user') || '';
     let pollingInterval = null;
@@ -476,12 +485,22 @@
           timeString = `${hours}:${minutes} - ${day}/${month}`;
         }
 
+        let textVal = msg.text || "";
+        let contentHtml = "";
+
+        // Kiểm tra xem nội dung có phải là link ảnh hay không
+        if (isImageUrl(textVal)) {
+          contentHtml = `<img src="${textVal}" style="max-width: 100%; max-height: 250px; border-radius: 6px; margin-top: 5px; display: block; cursor: pointer;" onclick="window.open(this.src)" title="Nhấn để phóng to ảnh" />`;
+        } else {
+          contentHtml = `<div class="text">${escapeHtml(textVal)}</div>`;
+        }
+
         div.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
             <span class="sender">${escapeHtml(msg.sender)}</span>
             <span class="time">${timeString}</span>
           </div>
-          <div class="text">${escapeHtml(msg.text)}</div>
+          ${contentHtml}
         `;
         container.appendChild(div);
       });
@@ -493,11 +512,71 @@
       }
     }
 
-    async function sendMessage() {
+    // Xử lý chọn ảnh: Nén nhỏ qua Canvas rồi đẩy lên repo GitHub
+    function handleImageUpload(event) {
+      let file = event.target.files[0];
+      if (!file) return;
+
+      let reader = new FileReader();
+      reader.onload = function(e) {
+        let img = new Image();
+        img.onload = async function() {
+          let canvas = document.createElement('canvas');
+          let ctx = canvas.getContext('2d');
+          
+          let maxWidth = 600; // Giới hạn chiều rộng tối đa 600px cho nhẹ
+          let width = img.width;
+          let height = img.height;
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          let compressedDataUrl = canvas.toDataURL('image/jpeg', 0.75);
+          let base64Content = compressedDataUrl.split(',')[1];
+          let filename = `chat_${Date.now()}.jpg`;
+          
+          try {
+            let uploadUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/chat-images/${filename}`;
+            let response = await fetch(uploadUrl, {
+              method: 'PUT',
+              headers: {
+                Authorization: `token ${GITHUB_TOKEN}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                message: `Upload chat image ${filename}`,
+                content: base64Content
+              })
+            });
+
+            if (!response.ok) throw new Error('Upload thất bại');
+
+            let rawUrl = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/chat-images/${filename}`;
+            pushMessageToGist(rawUrl);
+          } catch (err) {
+            alert('Không thể tải ảnh lên kho GitHub!');
+          }
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+      event.target.value = ''; // Reset input file
+    }
+
+    function sendMessage() {
       let input = document.getElementById('messageInput');
       let text = input.value.trim();
       if (!text) return;
+      input.value = '';
+      pushMessageToGist(text);
+    }
 
+    async function pushMessageToGist(content) {
       if (GIST_ID === "YOUR_GIST_ID_HERE") {
         alert("Chưa cấu hình GitHub Gist ID trong code!");
         return;
@@ -520,7 +599,7 @@
           if (textData) messages = JSON.parse(textData);
         }
 
-        messages.push({ sender: senderName, text: text, time: Date.now() });
+        messages.push({ sender: senderName, text: content, time: Date.now() });
         if (messages.length > 50) messages = messages.slice(-50); // Giữ 50 tin mới nhất
 
         let encrypted = CryptoJS.AES.encrypt(JSON.stringify(messages), MASTER_SECRET).toString();
@@ -538,12 +617,15 @@
           })
         });
 
-        input.value = '';
         isFirstLoad = true; // Gửi tin nhắn xong sẽ ép cuộn xuống đáy để thấy tin nhắn của mình
         fetchMessages();
       } catch (e) {
         alert('Không gửi được tin nhắn!');
       }
+    }
+
+    function isImageUrl(url) {
+      return typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://')) && (url.includes('raw.githubusercontent.com') || /\.(jpg|jpeg|png|gif|webp|bmp)(\?.*)?$/i.test(url));
     }
 
     function checkEnter(e) {
