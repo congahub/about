@@ -352,7 +352,7 @@
   </footer>
 
   <script>
-    // Chuỗi Hash SHA-256 đã tính toán sẵn (Cố định 100%, F12 không thể giải mã ngược lại)
+    // Chuỗi Hash SHA-256 cố định (Chữ thường)
     const members = {
       "laquan": { name: "Lê Anh Quân", passHash: "0be4e2d3bb9709214d0263f73319be5ff83f9cdb89e3ec40375cf39f99fbf246" },
       "tnphong": { name: "Trần Nam Phong", passHash: "4aa5e1ef9dd2395d3c8c7d8cd060b97926eefdfb4fcd1ebec2f7a69c0dce0df4" },
@@ -367,9 +367,8 @@
     const tokenPart1 = "ghp_hKdqf4KniRN9dWS";
     const tokenPart2 = "fPTa4SXMdQFsoDP45oBBK";
     const GITHUB_TOKEN = tokenPart1 + tokenPart2;
-    const MASTER_SECRET = "congahub_secure_key_2026"; // Khóa mã hóa chung của phòng
+    const MASTER_SECRET = "congahub_secure_key_2026";
 
-    // Cấu hình repo công khai chứa ảnh (congahub/about)
     const REPO_OWNER = "congahub";
     const REPO_NAME = "about";
 
@@ -413,10 +412,10 @@
       let passInput = document.getElementById('memberPassInput').value.trim();
       let errorText = document.getElementById('errorText');
       
-      // Băm mật khẩu người dùng nhập vào để so sánh với Hash cố định
-      let inputHash = CryptoJS.SHA256(passInput).toString();
+      // Băm mật khẩu nhập vào và chuyển hẳn thành chữ thường để so sánh chính xác
+      let inputHash = CryptoJS.SHA256(passInput).toString().toLowerCase();
 
-      if (members[idInput] && members[idInput].passHash === inputHash) {
+      if (members[idInput] && members[idInput].passHash.toLowerCase() === inputHash) {
         currentUser = idInput;
         localStorage.setItem('ch_user', currentUser);
         errorText.classList.add('hidden');
