@@ -371,6 +371,7 @@
     let pollingInterval = null;
     let logoClicks = 0;
     let clickTimer = null;
+    let isFirstLoad = true; // Biến kiểm tra lần đầu mở chat để ép cuộn xuống đáy
 
     // Cơ chế bấm liên tục 3 lần vào logo để mở bảng đăng nhập chat bí mật
     function handleLogoClick() {
@@ -425,6 +426,7 @@
     }
 
     function startChat() {
+      isFirstLoad = true;
       fetchMessages();
       pollingInterval = setInterval(fetchMessages, 4000); // Tự động làm mới tin nhắn mỗi 4 giây
     }
@@ -457,6 +459,10 @@
 
     function renderLocalMockChat(messages) {
       let container = document.getElementById('chatMessages');
+      
+      // Kiểm tra xem người dùng có đang ở gần đáy khung chat hay không (cách đáy dưới 80px)
+      let isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 80;
+
       container.innerHTML = '';
       messages.forEach(msg => {
         let div = document.createElement('div');
@@ -482,7 +488,12 @@
         `;
         container.appendChild(div);
       });
-      container.scrollTop = container.scrollHeight;
+
+      // Chỉ tự động cuộn xuống đáy nếu là lần đầu mở chat hoặc người dùng đang ở đáy
+      if (isFirstLoad || isNearBottom) {
+        container.scrollTop = container.scrollHeight;
+        isFirstLoad = false;
+      }
     }
 
     async function sendMessage() {
@@ -531,6 +542,7 @@
         });
 
         input.value = '';
+        isFirstLoad = true; // Gửi tin nhắn xong sẽ ép cuộn xuống đáy để thấy tin nhắn của mình
         fetchMessages();
       } catch (e) {
         alert('Không gửi được tin nhắn!');
@@ -553,6 +565,7 @@
             }
           })
         });
+        isFirstLoad = true;
         fetchMessages();
       } catch (e) {
         alert("Lỗi! Không thể xóa lịch sử.");
