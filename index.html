@@ -255,10 +255,7 @@
       <div id="chatScreen" class="chat-interface hidden">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
           <span style="font-weight: bold; color: var(--accent); font-size: 0.9rem;">Đang đăng nhập với tư cách: <span id="currentUserName" style="color: #fff;"></span></span>
-          <div>
-            <button class="btn btn-danger" style="padding: 5px 10px; font-size: 0.8rem; background-color: #e74c3c; margin-right: 5px;" onclick="clearChatHistory()">Xóa lịch sử</button>
-            <button class="btn btn-danger" style="padding: 5px 10px; font-size: 0.8rem;" onclick="logout()">Thoát</button>
-          </div>
+          <button class="btn btn-danger" style="padding: 5px 10px; font-size: 0.8rem;" onclick="logout()">Thoát</button>
         </div>
         <div id="chatMessages" class="chat-messages">
           <!-- Tin nhắn sẽ tải tự động vào đây -->
@@ -546,29 +543,6 @@
         fetchMessages();
       } catch (e) {
         alert('Không gửi được tin nhắn!');
-      }
-    }
-
-    async function clearChatHistory() {
-      if (!confirm("Bạn có chắc chắn muốn xóa toàn bộ lịch sử chat không?")) return;
-      let emptyEncrypted = CryptoJS.AES.encrypt(JSON.stringify([]), MASTER_SECRET).toString();
-      try {
-        await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-          method: 'PATCH',
-          headers: {
-            Authorization: `token ${GITHUB_TOKEN}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            files: {
-              'congahub_chat.json': { content: emptyEncrypted }
-            }
-          })
-        });
-        isFirstLoad = true;
-        fetchMessages();
-      } catch (e) {
-        alert("Lỗi! Không thể xóa lịch sử.");
       }
     }
 
