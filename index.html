@@ -38,6 +38,11 @@
       height: auto;
       margin-bottom: 15px;
       border-radius: 20px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .logo:hover {
+      transform: scale(1.02);
     }
     header h1 {
       color: #fff;
@@ -62,7 +67,7 @@
       margin-bottom: 30px;
       font-size: 1.5rem;
     }
-    .about-box, .chat-box-container {
+    .about-box {
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -122,6 +127,37 @@
     .badge-newbie { background-color: var(--badge-newbie); }
     .badge-senior { background-color: var(--badge-senior); }
 
+    /* Modal / Cửa sổ popup bí mật chứa phòng chat */
+    .secret-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .secret-content {
+      background: var(--card-bg);
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 650px;
+      padding: 25px;
+      position: relative;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .close-modal {
+      position: absolute;
+      top: 15px; right: 20px;
+      background: none; border: none;
+      color: #8b949e; font-size: 1.5rem;
+      cursor: pointer;
+    }
+    .close-modal:hover { color: #fff; }
+
     /* Giao diện khu vực Chat & Đăng nhập bảo mật */
     .auth-form, .chat-interface {
       display: flex;
@@ -154,7 +190,7 @@
     .btn-danger:hover { background: #b62324; }
     
     .chat-messages {
-      height: 350px;
+      height: 380px;
       overflow-y: auto;
       background: #0d1117;
       border: 1px solid var(--border);
@@ -172,7 +208,8 @@
       max-width: 85%;
       word-break: break-word;
     }
-    .message .sender { font-size: 0.8rem; color: var(--accent); margin-bottom: 4px; font-weight: bold; }
+    .message .sender { font-size: 0.85rem; color: var(--accent); font-weight: bold; }
+    .message .time { font-size: 0.75rem; color: #8b949e; }
     .chat-input-row {
       display: flex;
       gap: 10px;
@@ -193,20 +230,21 @@
 <body>
 
   <header>
-    <img src="Chicken.png" alt="CONGAHUB Logo" class="logo">
+    <!-- BÍ MẬT: Nhấp nhanh 3 lần vào logo con gà để mở bảng đăng nhập chat -->
+    <img src="Chicken.png" alt="CONGAHUB Logo" class="logo" onclick="handleLogoClick()" title="Gà Congahub">
     <h1>CONGAHUB</h1>
     <p class="subtitle">Câu Lạc Bộ Học Sinh Giỏi Tin Học (C++) - THCS Bảo Yên</p>
   </header>
 
-  <div class="container">
-    
-    <!-- KHU VỰC PHÒNG CHAT BẢO MẬT -->
-    <section class="chat-box-container">
-      <h2 class="section-title" style="margin-top:0;">Phòng Chat Nội Bộ Congahub</h2>
+  <!-- MODAL BÍ MẬT CHỨA PHÒNG CHAT -->
+  <div id="secretModal" class="secret-modal">
+    <div class="secret-content">
+      <button class="close-modal" onclick="closeSecretModal()">&times;</button>
+      <h2 class="section-title" style="margin-top:0; font-size: 1.3rem;">Phòng Chat Nội Bộ Congahub</h2>
       
       <!-- Form Đăng Nhập -->
       <div id="authScreen" class="auth-form">
-        <p style="margin: 0 0 10px; color: #8b949e;">Vui lòng nhập ID thành viên và Mã bảo mật cấp riêng để tham gia phòng chat:</p>
+        <p style="margin: 0 0 10px; color: #8b949e; font-size: 0.95rem;">Vui lòng nhập ID thành viên và Mã bảo mật cấp riêng để tham gia phòng chat:</p>
         <input type="text" id="memberIdInput" placeholder="Nhập ID của bạn..." />
         <input type="password" id="memberPassInput" placeholder="Nhập Mã bảo mật..." />
         <p id="errorText" class="error-msg hidden">Sai ID hoặc Mã bảo mật! Vui lòng kiểm tra lại.</p>
@@ -216,8 +254,11 @@
       <!-- Giao Diện Chat Chính -->
       <div id="chatScreen" class="chat-interface hidden">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-          <span style="font-weight: bold; color: var(--accent);">Đang đăng nhập với tư cách: <span id="currentUserName" style="color: #fff;"></span></span>
-          <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.85rem;" onclick="logout()">Thoát</button>
+          <span style="font-weight: bold; color: var(--accent); font-size: 0.9rem;">Đang đăng nhập với tư cách: <span id="currentUserName" style="color: #fff;"></span></span>
+          <div>
+            <button class="btn btn-danger" style="padding: 5px 10px; font-size: 0.8rem; background-color: #e74c3c; margin-right: 5px;" onclick="clearChatHistory()">Xóa lịch sử</button>
+            <button class="btn btn-danger" style="padding: 5px 10px; font-size: 0.8rem;" onclick="logout()">Thoát</button>
+          </div>
         </div>
         <div id="chatMessages" class="chat-messages">
           <!-- Tin nhắn sẽ tải tự động vào đây -->
@@ -227,8 +268,10 @@
           <button class="btn" onclick="sendMessage()">Gửi</button>
         </div>
       </div>
-    </section>
+    </div>
+  </div>
 
+  <div class="container">
     <!-- GIỚI THIỆU -->
     <section class="about-box">
       <h2 class="section-title" style="margin-top:0;">Giới Thiệu</h2>
@@ -317,7 +360,7 @@
       "hxphuc": { name: "Hoàng Xuân Phúc", pass: "hxpgatinhoc" }
     };
 
-    // Cấu hình Gist dùng làm kho chứa tin nhắn chung (Bạn tạo 1 Gist và điền Gist ID + Token vào đây)
+    // Cấu hình Gist dùng làm kho chứa tin nhắn chung
     const GIST_ID = "47e0c8587f12005b6bbf6040584aa81c"; 
     const tokenPart1 = "ghp_hKdqf4KniRN9dWS";
     const tokenPart2 = "fPTa4SXMdQFsoDP45oBBK";
@@ -326,12 +369,37 @@
 
     let currentUser = localStorage.getItem('ch_user') || '';
     let pollingInterval = null;
+    let logoClicks = 0;
+    let clickTimer = null;
 
-    if (currentUser && members[currentUser]) {
-      document.getElementById('currentUserName').innerText = members[currentUser].name;
-      document.getElementById('authScreen').classList.add('hidden');
-      document.getElementById('chatScreen').classList.remove('hidden');
-      startChat();
+    // Cơ chế bấm liên tục 3 lần vào logo để mở bảng đăng nhập chat bí mật
+    function handleLogoClick() {
+      logoClicks++;
+      clearTimeout(clickTimer);
+      if (logoClicks >= 3) {
+        logoClicks = 0;
+        document.getElementById('secretModal').style.display = 'flex';
+        checkLoginState();
+      } else {
+        clickTimer = setTimeout(() => { logoClicks = 0; }, 600);
+      }
+    }
+
+    function closeSecretModal() {
+      document.getElementById('secretModal').style.display = 'none';
+      clearInterval(pollingInterval);
+    }
+
+    function checkLoginState() {
+      if (currentUser && members[currentUser]) {
+        document.getElementById('currentUserName').innerText = members[currentUser].name;
+        document.getElementById('authScreen').classList.add('hidden');
+        document.getElementById('chatScreen').classList.remove('hidden');
+        startChat();
+      } else {
+        document.getElementById('authScreen').classList.remove('hidden');
+        document.getElementById('chatScreen').classList.add('hidden');
+      }
     }
 
     function verifyLogin() {
@@ -343,10 +411,7 @@
         currentUser = idInput;
         localStorage.setItem('ch_user', currentUser);
         errorText.classList.add('hidden');
-        document.getElementById('currentUserName').innerText = members[currentUser].name;
-        document.getElementById('authScreen').classList.add('hidden');
-        document.getElementById('chatScreen').classList.remove('hidden');
-        startChat();
+        checkLoginState();
       } else {
         errorText.classList.remove('hidden');
       }
@@ -355,7 +420,8 @@
     function logout() {
       clearInterval(pollingInterval);
       localStorage.removeItem('ch_user');
-      location.reload();
+      currentUser = '';
+      checkLoginState();
     }
 
     function startChat() {
@@ -369,7 +435,6 @@
         return;
       }
       try {
-        // Gắn thêm timestamp (?t=...) và cài đặt cache: 'no-store' để ép trình duyệt luôn lấy dữ liệu mới từ GitHub
         let res = await fetch(`https://api.github.com/gists/${GIST_ID}?t=${Date.now()}`, {
           headers: { Authorization: `token ${GITHUB_TOKEN}` },
           cache: 'no-store'
@@ -396,7 +461,25 @@
       messages.forEach(msg => {
         let div = document.createElement('div');
         div.className = 'message';
-        div.innerHTML = `<div class="sender">${escapeHtml(msg.sender)}</div><div class="text">${escapeHtml(msg.text)}</div>`;
+        
+        // Định dạng hiển thị Ngày và Giờ chi tiết
+        let timeString = "";
+        if (msg.time) {
+          let dateObj = new Date(msg.time);
+          let hours = String(dateObj.getHours()).padStart(2, '0');
+          let minutes = String(dateObj.getMinutes()).padStart(2, '0');
+          let day = String(dateObj.getDate()).padStart(2, '0');
+          let month = String(dateObj.getMonth() + 1).padStart(2, '0');
+          timeString = `${hours}:${minutes} - ${day}/${month}`;
+        }
+
+        div.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span class="sender">${escapeHtml(msg.sender)}</span>
+            <span class="time">${timeString}</span>
+          </div>
+          <div class="text">${escapeHtml(msg.text)}</div>
+        `;
         container.appendChild(div);
       });
       container.scrollTop = container.scrollHeight;
@@ -415,7 +498,6 @@
       let senderName = members[currentUser].name;
 
       try {
-        // Thêm ?t=Date.now() và cache: 'no-store' ở lệnh fetch đọc dữ liệu cũ
         let res = await fetch(`https://api.github.com/gists/${GIST_ID}?t=${Date.now()}`, {
           headers: { Authorization: `token ${GITHUB_TOKEN}` },
           cache: 'no-store'
@@ -452,6 +534,28 @@
         fetchMessages();
       } catch (e) {
         alert('Không gửi được tin nhắn!');
+      }
+    }
+
+    async function clearChatHistory() {
+      if (!confirm("Bạn có chắc chắn muốn xóa toàn bộ lịch sử chat không?")) return;
+      let emptyEncrypted = CryptoJS.AES.encrypt(JSON.stringify([]), MASTER_SECRET).toString();
+      try {
+        await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+          method: 'PATCH',
+          headers: {
+            Authorization: `token ${GITHUB_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            files: {
+              'congahub_chat.json': { content: emptyEncrypted }
+            }
+          })
+        });
+        fetchMessages();
+      } catch (e) {
+        alert("Lỗi! Không thể xóa lịch sử.");
       }
     }
 
